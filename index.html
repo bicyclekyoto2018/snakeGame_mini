@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!-- 20220412の機能を最小限にしました。 -->
+<html lang="jp">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>snakeGame_mini</title>
+  <script>
+    let canvas,context;
+    const width = 600,w = 30,r = w/2;
+    let snake = new Array();
+    const food = new Array();
+    let dx,dy,score,status,timer;
+   
+    const init = () => {
+      canvas = document.getElementById("grid");
+      context = canvas.getContext("2d");
+      [canvas.width,canvas.height] = [width,width];
+    
+      document.addEventListener("keydown",changeDir);
+      context.clearRect(0,0,width,width);
+      drawGrid();
+      document.getElementById("stop").disabled = true;
+    }
+    
+    const changeDir = event => { 
+        if ((event.key == "ArrowRight")&&(dx != -1)) [dx,dy] = [1,0];
+        if ((event.key == "ArrowLeft")&&(dx != 1)) [dx,dy] = [-1,0];
+        if ((event.key == "ArrowUp")&&(dy != 1)) [dx,dy] = [0,-1];
+        if ((event.key == "ArrowDown")&&(dy != -1)) [dx,dy] = [0,1];
+     }
+        
+    const starGame = () => {
+      [dx,dy] = [1,0];
+      [score,status] = [0,"play"];
+      snake = [];
+      snake.push([width/2,width/2]);
+      setFood();
+      document.getElementById("message").innerText = "";
+      for (const input of document.getElementsByTagName("input")) {
+        input.disabled = true;
+      }
+      document.getElementById("stop").disabled = false;
+      timer = setInterval(update,300);
+    }
+    
+    const stopGame = () => {
+      clearInterval(timer);
+      for (const input of document.getElementsByTagName("input")) {
+        input.disabled = false;
+      }
+      document.getElementById("stop").disabled = true;
+    }
+    
+    const getDistance = (pos1,pos2) => ((pos1[0]-pos2[0])**2 + (pos1[1]-pos2[1])**2)**0.5;
+    
+    const setFood = () => {
+      food[0] = Math.floor(Math.random() * width/w) * w;
+      food[1] = Math.floor(Math.random() * width/w) * w;
+      let check = "ok";
+      for (let i=0; i<snake.length; i++) {
+        if (getDistance(snake[i],food) < w) check = "ng";
+      }
+      if (check == "ng") setFood();
+    }
+    
+    const drawGrid = () => {
+      context.strokeStyle = "#CCCCCC";
+      context.beginPath();
+      for (let i=0; i<width; i+=w) {
+        context.moveTo(i,0);
+        context.lineTo(i,width);
+        context.moveTo(0,i);
+        context.lineTo(width,i);
+      }
+      context.stroke();
+    }
+    
+    const update = () => {
+      for (let i=snake.length-1; i>0; i--) {
+        snake[i][0] = snake[i-1][0];
+        snake[i][1] = snake[i-1][1];
+      }
+      snake[0][0] += dx * w;
+      snake[0][1] += dy * w;
+      if (snake[0][0] <= -w) snake[0][0] = width - w; 
+      if (snake[0][0] >= width) snake[0][0] = 0;
+      if (snake[0][1] <= -w) snake[0][1] = width - w;  
+      if (snake[0][1] >= width) snake[0][1] = 0;
+      for (let j=1; j<snake.length; j++) {
+        if (getDistance(snake[0],snake[j]) < r) status ="end";
+      }
+      if (getDistance(snake[0],food) < w) {
+        snake.push(food.concat()); 
+        setFood();
+        score += 100;
+      }
+      context.clearRect(0,0,width,width);
+      context.fillStyle = "#FF0000";
+      context.fillRect(food[0],food[1],w,w);
+      context.fillStyle = "#009900";
+      if (status == "end") context.fillStyle = "#666600";
+      for (let i=0; i<snake.length; i++) {
+        context.fillRect(snake[i][0],snake[i][1],w,w);
+      }
+      drawGrid();
+      document.getElementById("score").innerText = score;
+      if (status == "end") {
+        document.getElementById("message").innerText = "GAMEOVER!!";
+        stopGame();
+      }
+    }
+    </script>
+    <style>
+      #message {color: #FF0000;}
+      canvas {border: thin solid #000000};
+    </style>
+</head>
+<body onload="init()">
+  <p>スネークゲームミニ</p>
+  <input type="button" value="スタート" onclick="starGame()">
+  <input type="button" id="stop" value="ストップ" onclick="stopGame()">
+  スコア：<span id="score">--</span> <span id="message"></span>
+  <hr>
+  <canvas id="grid"></canvas>
+</body>
+</html>
